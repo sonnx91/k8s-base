@@ -12,16 +12,16 @@
 
 ```text
 [masters]
-master_1 ansible_host=aws.codihaus.k8s.master
+master_1 ansible_host=aws.k8s.master
 ```
 
 - Node worker
 
 ```text
 [workers]
-worker_1 ansible_host=aws.codihaus.k8s.node.1
-worker_2 ansible_host=aws.codihaus.k8s.node.2
-worker_3 ansible_host=aws.codihaus.k8s.node.3
+worker_1 ansible_host=aws.k8s.node.1
+worker_2 ansible_host=aws.k8s.node.2
+worker_3 ansible_host=aws.k8s.node.3
 ```
 
 ### Run bash install
