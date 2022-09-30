@@ -1,0 +1,102 @@
+{{- /*
+If the operator configures the ingress input variable, then also create an Ingress resource that will route to the
+service. Note that Ingress can only route to a Service, so the operator must also configure a Service.
+*/ -}}
+{{- if .Values.ingress.enabled -}}
+{{- /*
+We declare some variables defined on the Values. These are reused in `with` and `range` blocks where the scoped variable
+(`.`) is rebound within the block.
+*/ -}}
+{{- $fullName := include "application.fullname" . -}}
+{{- $ingressPath := .Values.ingress.path -}}
+{{- $additionalPathsHigherPriority := .Values.ingress.additionalPathsHigherPriority }}
+{{- $additionalPaths := .Values.ingress.additionalPaths }}
+{{- $servicePort := .Values.ingress.servicePort -}}
+{{- $pathType := .Values.ingress.pathType -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    # These labels are required by helm. You can read more about required labels in the chart best practices guide:
+    # https://docs.helm.sh/chart_best_practices/#standard-labels
+    app.kubernetes.io/name: {{ include "application.name" . }}
+    helm.sh/chart: {{ include "application.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.ingress.annotations }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
+spec:
+{{- if .Values.ingress.tls }}
+{{- with .Values.ingress.tls }}
+  tls:
+{{ toYaml . | indent 4}}
+{{- end }}
+{{- end }}
+  rules:
+    {{- if .Values.ingress.hosts }}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          {{- range $additionalPathsHigherPriority }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ if .serviceName }}{{ .serviceName }}{{ else }}{{ $fullName }}{{ end }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+          - path: {{ $ingressPath }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          {{- range $additionalPaths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ if .serviceName }}{{ .serviceName }}{{ else }}{{ $fullName }}{{ end }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+    {{- end }}
+    {{- else }}
+    - http:
+        paths:
+          {{- range $additionalPathsHigherPriority }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ if .serviceName }}{{ .serviceName }}{{ else }}{{ $fullName }}{{ end }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+          - path: {{ $ingressPath }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+          {{- range $additionalPaths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ if .serviceName }}{{ .serviceName }}{{ else }}{{ $fullName }}{{ end }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+
+    {{- end }}
+{{- end }}

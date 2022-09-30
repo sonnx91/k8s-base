@@ -1,0 +1,69 @@
+deployment:
+  enabled: true
+
+containerImage:
+  repository: #replace image id here or image path
+  tag: latest
+  pullPolicy: Always
+
+applicationName: "cms"
+
+replicaCount: 2
+
+# The default config exposes TCP port 80 and binds the name `http` to it.
+containerPorts:
+  http:
+    port: 8055
+    protocol: TCP
+
+service:
+  enabled: true
+  ports:
+    app:
+      port: 8055
+      targetPort: http
+      protocol: TCP
+
+# config domain here
+ingress:
+  enabled: false
+
+envVars:
+  DB_CLIENT: 'mysql'
+  DB_HOST: 'database'
+  DB_PORT: '3306'
+  DB_DATABASE: ${MYSQL_DATABASE}
+  DB_USER: ${MYSQL_USER}
+  DB_PASSWORD: ${MYSQL_PASSWORD}
+  KEY: ${DIRECTUS_KEY}
+  SECRET: ${DIRECTUS_SECRET}
+  PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
+  ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+  ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+  CORS_ORIGIN: ${DIRECTUS_CORS_ORIGIN}
+  CORS_ENABLED: ${DIRECTUS_CORS_ENABLED}
+  CORS_METHODS: ${DIRECTUS_CORS_METHODS}
+  CORS_CREDENTIALS: ${DIRECTUS_CORS_CREDENTIALS}
+  EXTENSIONS_AUTO_RELOAD: ${DIRECTUS_EXTENSIONS_AUTO_RELOAD}
+  CACHE_AUTO_PURGE: ${DIRECTUS_CACHE_AUTO_PURGE}
+  CACHE_ENABLED: 'true'
+  CACHE_STORE: 'redis'
+  CACHE_REDIS: 'redis://cache:6379'
+
+# envFrom is a map of strings code environment variable use secrets
+envFroms:
+  enabled: false
+
+persistentVolumes: {}
+
+# list is a string that corresponds to the Secret name.
+imagePullSecrets:
+  - backend
+
+containerResources:
+  limits:
+    memory: 200Mi
+    cpu: 200m
+  requests:
+    memory: 100Mi
+    cpu: 100m

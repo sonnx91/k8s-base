@@ -1,0 +1,64 @@
+deployment:
+  enabled: true
+
+containerImage:
+  #replace frontend image id or image path here
+  repository: registry.gitlab.com/codihaus/projects/nestjs-ssr/phs/phs-frontend:latest
+  tag: latest
+  pullPolicy: Always
+
+applicationName: "frontend"
+
+replicaCount: 2
+
+# The default config exposes TCP port 80 and binds the name `http` to it.
+containerPorts:
+  http:
+    port: 3000
+    protocol: TCP
+
+service:
+  enabled: true
+  ports:
+    app:
+      port: 3000
+      targetPort: http
+      protocol: TCP
+
+# config domain here
+ingress:
+  enabled: false
+  path: /
+  pathType: Prefix
+  servicePort: 80
+  hosts:
+    - frontend-domain.vn
+  tls:
+    - hosts:
+      - frontend-domain.vn
+      secretName: domain-frontend-tls
+
+envVars:
+  NODE_ENV: production
+  VITE_BASE_URL: ${FRONTEND_URL}
+  VITE_MULTILANG: 1
+  VITE_DIRECTUS_URL: ${BACKENDBACKEND_URL}
+  PORT: 3000
+
+# envFrom is a map of strings code environment variable use secrets
+envFroms:
+  enabled: false
+
+persistentVolumes: {}
+
+# list is a string that corresponds to the Secret name.
+imagePullSecrets:
+  - frontend
+
+containerResources:
+  limits:
+    memory: 200Mi
+    cpu: 200m
+  requests:
+    memory: 100Mi
+    cpu: 100m

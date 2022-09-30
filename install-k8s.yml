@@ -1,0 +1,50 @@
+- name: "Setup pre-packages for all nodes"
+  hosts:
+    - masters
+    - workers
+  become: yes
+  tasks:
+    - name: Copy running file to remote
+      template:
+        src: "templates/config.sh.j2"
+        dest: "/tmp/config.sh"
+    - name: Execute config file
+      shell: bash /tmp/config.sh >> /tmp/config.logs
+
+- name: "Initialize masters"
+  hosts: masters
+  become: yes
+  tasks:
+    - name: Copy running file to remote
+      template:
+        src: "templates/master.sh.j2"
+        dest: "/tmp/master.sh"
+    - name: Execute config file
+      shell: bash /tmp/master.sh >> /tmp/master.logs
+    - name: Download kubeconfig file
+      fetch:
+        src: /tmp/config
+        dest: kubeconfig
+        flat: yes
+    - name: Download worker-start.sh file
+      fetch:
+        src: /tmp/worker-start.sh
+        dest: worker-start.sh
+        flat: yes
+
+- name: "Initialize workers"
+  hosts: workers
+  become: yes
+  tasks:
+    - copy:
+        src: worker-start.sh
+        dest: /tmp/worker-start.sh
+    - copy:
+        src: kubeconfig
+        dest: /tmp/kubeconfig
+    - name: Copy running file to remote
+      template:
+        src: "templates/worker.sh.j2"
+        dest: "/tmp/worker.sh"
+    - name: Execute config file
+      shell: bash /tmp/worker.sh >> /tmp/worker.logs

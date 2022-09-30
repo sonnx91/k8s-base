@@ -1,0 +1,4 @@
+echo "This is worker"
+sh -e /tmp/worker-start.sh
+export KUBECONFIG=/tmp/kubeconfig
+kubectl label node $(hostname -s) node-role.kubernetes.io/worker=worker-new

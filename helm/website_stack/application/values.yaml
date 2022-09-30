@@ -1,0 +1,144 @@
+deployment:
+  enabled: true
+
+containerImage:
+  repository: nginx
+  tag: 1.18.2
+  pullPolicy: IfNotPresent
+
+applicationName: "nginx"
+# Example (run echo "Hello World"):
+#
+# containerCommand:
+#   - "echo"
+#   - "Hello World"
+containerCommand: null
+
+# The default config exposes TCP port 80 and binds the name `http` to it.
+containerPorts:
+  http:
+    port: 80
+    protocol: TCP
+
+# livenessProbe is a map that specifies the liveness probe of the main application container
+# EXAMPLE:
+#
+# livenessProbe:
+#   httpGet:
+#     path: /
+#     port: http
+livenessProbe: {}
+
+# readinessProbe is a map that specifies the readiness probe of the main application container. 
+# EXAMPLE:
+#
+# readinessProbe:
+#   httpGet:
+#     path: /
+#     port: http
+readinessProbe: {}
+
+# startupProbe is a map that specifies the readiness probe of the main application container. 
+# EXAMPLE:
+#
+# startupProbe:
+#   httpGet:
+#     path: /
+#     port: http
+startupProbe: {}
+
+# You can disable this behavior by setting this value to 0.
+shutdownDelay: 5
+
+
+# replicaCount can be used to configure the number of replica pods
+replicaCount: 1
+
+
+# NOTE: This variable is injected directly into the deployment spec.
+deploymentAnnotations: {}
+
+# NOTE: This variable is injected directly into the deployment spec.
+additionalDeploymentLabels: {}
+
+# NOTE: This variable is injected directly into the pod spec.
+podAnnotations: {}
+
+# NOTE: This variable is injected directly into the deployment spec.
+additionalPodLabels: {}
+
+# for an introduction to PodDisruptionBudgets.
+# NOTE: setting this to 0 will skip creating the PodDisruptionBudget resource.
+minPodsAvailable: 0
+
+# The default config configures a Service of type ClusterIP with no annotation, and binds port 80 of the pod to the
+# port 80 of the service, and names the binding as `app`:
+service:
+  enabled: true
+  ports:
+    app:
+      port: 80
+      targetPort: http
+      protocol: TCP
+
+ingress:
+  enabled: false
+
+# envVars is a map of strings to strings that specifies hard coded environment variables that should be set on the
+# application container.
+# EXAMPLE:
+#
+# envVars:
+#   DB_HOST: "psql.default.svc.cluster.local"
+#   DB_PORT: 5432
+envVars: {}
+
+# envFrom is a map of strings code environment variable use secrets
+envFroms:
+  enabled: false
+
+additionalContainerEnv: {}
+
+configMaps: {}
+
+# EXAMPLE:
+# persistentVolumes:
+#   example-pv:
+#     mountPath: /mnt/myVol
+#     claimName: example-pv-claim
+#   example-pv-2:
+#     mountPath: /mnt/myOtherVol
+#     claimName: example-pv2-claim
+#
+#
+persistentVolumes: {}
+
+scratchPaths: {}
+
+secrets: {}
+
+# containerResources:
+#   limits:
+#     memory:
+#     cpu:
+#   reqeuests:
+#     memory:
+#     cpu:
+containerResources: {}
+
+nodeSelector: {}
+affinity: {}
+
+tolerations: []
+
+# list is a string that corresponds to the Secret name.
+imagePullSecrets: []
+
+
+# The default config uses empty string to indicate that the default service account should be used and one shouldn't
+# be created
+serviceAccount:
+  name: ""
+  create: false
+  annotations: {}
+  labels: {}

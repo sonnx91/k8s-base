@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart to package your application container for Kubernetes
+name: application
+version: 1.0.0

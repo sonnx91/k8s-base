@@ -1,0 +1,110 @@
+image:
+  registry: docker.io
+  repository: bitnami/redis
+  tag: 6.2.7-debian-10-r0
+  pullPolicy: IfNotPresent
+  debug: false
+
+architecture: standalone
+
+auth:
+  enabled: false
+  sentinel: false
+
+commonConfiguration: |-
+  # Enable AOF https://redis.io/topics/persistence#append-only-file
+  appendonly yes
+  # Disable RDB persistence, AOF persistence already enabled.
+  save ""
+
+master:
+  configuration: ""
+  disableCommands:
+    - FLUSHDB
+    - FLUSHALL
+  containerPorts:
+    redis: 6379
+
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 5
+
+  resources:
+    requests:
+      memory: 8192Mi
+      cpu: 2000m
+
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+
+  kind: StatefulSet
+
+  updateStrategy:
+    type: RollingUpdate
+
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+  service:
+    type: ClusterIP
+    ports:
+      redis: 6379
+  terminationGracePeriodSeconds: 30
+
+replica:
+  replicaCount: 0
+
+metrics:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/redis-exporter
+    tag: 1.37.0-debian-10-r39
+    pullPolicy: IfNotPresent
+  redisTargetHost: "localhost"
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+  service:
+    type: ClusterIP
+    port: 9121
+    externalTrafficPolicy: Cluster
+sysctl:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 10-debian-10-r408
+    pullPolicy: IfNotPresent
+  mountHostSys: false

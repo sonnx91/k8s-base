@@ -1,0 +1,33 @@
+# ----
+# Master node commands:
+echo "This is master"
+
+#= ip of this box
+# VIRTUAL_CARD=`ip addr show | grep 'scope global dynamic' | awk '{print $(NF)}'`
+# IP_ADDR=`ip -4 -o addr show $VIRTUAL_CARD | awk '{print $4}' | cut -d "/" -f 1`
+IP_ADDR=`hostname -I | awk '{print $1}'`
+echo $IP_ADDR
+
+# install k8s master
+kubeadm init --apiserver-advertise-address=$IP_ADDR --pod-network-cidr=192.168.5.0/16
+
+#= copying credentials to regular user - vagrant
+# sudo --user=vagrant mkdir -p /home/vagrant/.kube
+# cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+# chown $(id -u vagrant):$(id -g vagrant) /home/vagrant/.kube/config
+
+# [ -f /vagrant/kubeconfig ] && rm /vagrant/kubeconfig
+# cp -i /etc/kubernetes/admin.conf /vagrant/kubeconfig
+
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+cp -i /etc/kubernetes/admin.conf /tmp/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+
+#= install Calico networking
+export KUBECONFIG=/tmp/config
+# kubectl apply -f https://docs.projectcalico.org/v3.19/manifests/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+#= generate join cluster commands
+kubeadm token create --print-join-command > /tmp/worker-start.sh

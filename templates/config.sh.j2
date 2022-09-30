@@ -1,0 +1,69 @@
+
+# Load Node IP
+# VIRTUAL_CARD=`ip addr show | grep 'scope global dynamic' | awk '{print $(NF)}'`
+# IP_ADDR=`ip -4 -o addr show $VIRTUAL_CARD | awk '{print $4}' | cut -d "/" -f 1`
+IP_ADDR=`hostname -I | awk '{print $1}'`
+echo $IP_ADDR
+
+#= Letting iptables see bridged traffic
+modprobe br_netfilter
+
+cat <<EOF |  tee /etc/modules-load.d/k8s.conf
+br_netfilter
+EOF
+
+cat <<EOF |  tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+echo 1 > /proc/sys/net/ipv4/ip_forward
+sysctl --system
+
+#= Disable Swap Memory
+sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+swapoff -a
+
+# Install docker
+apt update
+apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg |  apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+# Show all supported version of docker-ce
+apt-cache madison docker-ce
+# apt install -y docker-ce=5:19.03.15~3-0~ubuntu-bionic
+apt install -y docker-ce
+usermod -aG docker $USER
+
+# Configure Docker to start on boot
+systemctl enable docker.service
+systemctl enable containerd.service
+
+# Quickly changing the Docker Cgroup Driver
+# If you skip this step, while using Docker, and you initialize the Cluster, you will get an error saying that Docker group driver detected cgroupfs instead systemd, etc. It is very easy to do, on both components from our Cluster, and future workers run the next:
+cat <<EOF |  tee /etc/docker/daemon.json
+{"exec-opts": ["native.cgroupdriver=systemd"],"log-driver": "json-file","log-opts":{ "max-size": "100m" },"storage-driver": "overlay2"}
+EOF
+
+systemctl daemon-reload
+systemctl restart docker
+
+#= Install kubeadm
+curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" |  tee /etc/apt/sources.list.d/kubernetes.list
+apt-get list -a kubeadm
+apt-get update
+# apt-get install -y kubelet=1.22.* kubeadm=1.22.* kubectl=1.22.*
+apt-get install -y kubeadm=1.22.6-00 kubelet=1.22.6-00 kubectl=1.22.6-00
+kubeadm version
+apt-mark hold kubelet kubeadm kubectl
+
+# Set node IP
+if [ -f /etc/default/kubelet ]; then
+    sed -i "/^[^#]*KUBELET_EXTRA_ARGS=/c\KUBELET_EXTRA_ARGS=--node-ip=$IP_ADDR" /etc/default/kubelet
+else
+    touch /etc/default/kubelet
+    echo KUBELET_EXTRA_ARGS=--node-ip=$IP_ADDR > /etc/default/kubelet
+fi
+systemctl restart kubelet
